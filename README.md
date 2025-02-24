@@ -1,6 +1,5 @@
 Here’s the updated **README.md** with a notice that the project is still under development:  
 
-```md
 # URL Shortener
 
 🚧 **This project is currently under development. The README will be updated once the project is completed.** 🚧
@@ -105,6 +104,5 @@ This project is licensed under the **MIT License**.
 ## Author
 
 Developed by [Numan](https://github.com/Nuu-maan).
-```
 
 Let me know if you want any changes. 🚀
