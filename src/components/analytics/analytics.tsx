@@ -3,7 +3,7 @@
 import { ActivitySquare, Link, Users } from "lucide-react"
 import { AnalyticCard } from "./AnalyticCard"
 
-export default function Analytics() {
+export function Analytics() {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <AnalyticCard

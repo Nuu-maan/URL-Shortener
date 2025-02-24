@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, Copy, Link as LinkIcon } from "lucide-react"
 
 export function URLShortener() {
@@ -14,15 +13,17 @@ export function URLShortener() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Generate a simple mock short URL immediately
+    if (!url.trim()) return // Prevent empty submission
     const mockShortUrl = `short.url/${Math.random().toString(36).slice(2, 8)}`
     setShortUrl(mockShortUrl)
   }
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(shortUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shortUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   return (
@@ -38,7 +39,7 @@ export function URLShortener() {
               required
               className="flex-1"
             />
-            <Button type="submit">
+            <Button type="submit" disabled={!url.trim()}>
               <LinkIcon className="mr-2 h-4 w-4" />
               Shorten URL
             </Button>
@@ -55,6 +56,7 @@ export function URLShortener() {
                   variant="outline"
                   onClick={copyToClipboard}
                   className="flex-shrink-0"
+                  aria-live="polite"
                 >
                   {copied ? (
                     <>
