@@ -1,3 +1,4 @@
+import Analytics from "@/components/analytics/Analytics"
 
 export default function AnalyticsPage() {
   return (
@@ -6,8 +7,8 @@ export default function AnalyticsPage() {
         <h1 className="text-4xl font-bold text-center mb-8">
           Analytics Dashboard
         </h1>
-        {/* <Analytics /> */}
+        <Analytics />
       </div>
     </main>
-  );
+  )
 }

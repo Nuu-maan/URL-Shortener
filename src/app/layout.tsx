@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { NavBar } from "@/components/shared/NavBar"
@@ -13,7 +12,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen flex flex-col bg-background`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -21,7 +20,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NavBar />
-          {children}
+          <div className="flex-1">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>
