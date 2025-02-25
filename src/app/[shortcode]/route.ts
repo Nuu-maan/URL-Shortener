@@ -1,11 +1,18 @@
+// src/app/[shortcode]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+interface PageParams {
+  params: {
+    shortcode: string;
+  };
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shortcode: string } }
+  { params }: PageParams
 ) {
   const shortCode = params.shortcode;
 
