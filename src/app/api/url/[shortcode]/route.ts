@@ -1,3 +1,4 @@
+// src/app/api/url/[shortCode]/route.ts - Fix for API dynamic route
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
@@ -5,9 +6,9 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shortCode: string } }
+  context: { params: { shortCode: string } }
 ) {
-  const shortCode = params.shortCode;
+  const shortCode = context.params.shortCode;
 
   try {
     // Look up the URL in the database

@@ -1,14 +1,15 @@
+// src/app/[shortcode]/route.ts - Fix for the dynamic route
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// The correct type interface for route handlers with dynamic params
+// Use the correct format for App Router dynamic route params
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shortcode: string } }
+  context: { params: { shortcode: string } }
 ) {
-  const shortCode = params.shortcode;
+  const shortCode = context.params.shortcode;
 
   // Debug log to verify the shortCode is being correctly received
   console.log("Received shortCode:", shortCode);
@@ -57,3 +58,4 @@ export async function GET(
     );
   }
 }
+
