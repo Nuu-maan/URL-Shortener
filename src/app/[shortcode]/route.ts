@@ -4,12 +4,16 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Simplified approach - directly use the expected structure
+type RouteParams = {
+  shortcode: string;
+}
+
+// Using the simplest approach with direct access to params
 export async function GET(
   request: NextRequest,
-  props: { params: { shortcode: string } }
+  { params }: { params: RouteParams }
 ) {
-  const shortCode = props.params.shortcode;
+  const shortCode = params.shortcode;
 
   // Debug log to verify the shortCode is being correctly received
   console.log("Received shortCode:", shortCode);
