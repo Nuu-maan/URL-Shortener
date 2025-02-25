@@ -1,10 +1,9 @@
-// src/app/api/analytics/users/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server"; // Removed NextRequest since it's not used
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(request: NextRequest) {
+export async function GET() { // Removed unused 'request' parameter
   try {
     // Calculate current month and previous month boundaries
     const now = new Date();

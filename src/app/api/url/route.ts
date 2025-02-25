@@ -1,3 +1,4 @@
+// src/app/api/url/route.ts - Fix for unused variables
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { nanoid } from "nanoid";
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Validate URL
     try {
       new URL(url);
-    } catch (error) {
+    } catch (_) { // Changed 'error' to '_' to indicate unused parameter
       return NextResponse.json(
         { error: "Invalid URL. Please provide a valid URL." },
         { status: 400 }
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/url - List all URLs
-export async function GET(request: NextRequest) {
+export async function GET() { // Removed unused 'request' parameter
   try {
     const urls = await prisma.url.findMany({
       orderBy: {
