@@ -4,17 +4,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-interface PageParams {
-  params: {
-    shortcode: string;
-  };
-}
-
+// Simplified approach - directly use the expected structure
 export async function GET(
   request: NextRequest,
-  { params }: PageParams
+  props: { params: { shortcode: string } }
 ) {
-  const shortCode = params.shortcode;
+  const shortCode = props.params.shortcode;
 
   // Debug log to verify the shortCode is being correctly received
   console.log("Received shortCode:", shortCode);
