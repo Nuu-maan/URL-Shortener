@@ -22,10 +22,8 @@ export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json();
     
-    // Validate URL
-    try {
-      new URL(url);
-    } catch (_) { // Changed 'error' to '_' to indicate unused parameter
+    // Validate URL without capturing unused variable
+    if (!isValidUrl(url)) {
       return NextResponse.json(
         { error: "Invalid URL. Please provide a valid URL." },
         { status: 400 }
@@ -59,8 +57,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Helper function to validate URLs
+function isValidUrl(urlString: string): boolean {
+  try {
+    new URL(urlString);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // GET /api/url - List all URLs
-export async function GET() { // Removed unused 'request' parameter
+export async function GET() {
   try {
     const urls = await prisma.url.findMany({
       orderBy: {
