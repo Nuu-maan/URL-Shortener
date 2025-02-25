@@ -1,56 +1,70 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Check, Copy, Link as LinkIcon, Loader2 } from "lucide-react"
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Check, Copy, Link as LinkIcon, Loader2 } from "lucide-react";
 
 export function URLShortener() {
-  const [url, setUrl] = useState("")
-  const [shortUrl, setShortUrl] = useState("")
-  const [copied, setCopied] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [url, setUrl] = useState("");
+  const [shortUrl, setShortUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!url.trim()) return // Prevent empty submission
-    
+    e.preventDefault();
+    if (!url.trim()) return; // Prevent empty submission
+  
     try {
-      setIsLoading(true)
-      setError("")
-      
+      setIsLoading(true);
+      setError("");
+  
       const response = await fetch("/api/url", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ url }),
-      })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create short URL")
+      });
+  
+      // ✅ Log response status and text for debugging
+      console.log("Response Status:", response.status);
+  
+      let data;
+      const text = await response.text();
+      console.log("Raw Response Text:", text); // Debugging line
+  
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (error) {
+        console.error("JSON Parsing Error:", error);
+        throw new Error("Invalid response from server");
       }
-      
-      setShortUrl(data.shortUrl)
+  
+      if (!response.ok) {
+        console.error("Server Error:", data);
+        throw new Error(data.error || "Failed to create short URL");
+      }
+  
+      setShortUrl(data.shortUrl);
     } catch (err) {
-      console.error("Error creating short URL:", err)
-      setError(err instanceof Error ? err.message : "Failed to create short URL")
+      console.error("Error creating short URL:", err);
+      setError(err instanceof Error ? err.message : "Failed to create short URL");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+  
 
   const copyToClipboard = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shortUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+    if (navigator.clipboard && shortUrl) {
+      navigator.clipboard.writeText(shortUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -113,5 +127,5 @@ export function URLShortener() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
