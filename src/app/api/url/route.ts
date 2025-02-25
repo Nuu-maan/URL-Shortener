@@ -1,101 +1,58 @@
-// src/app/api/url/route.ts - Fix for unused variables
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { nanoid } from "nanoid";
 
 const prisma = new PrismaClient();
 
-// Define a type for the URL with count information without importing Url
-type UrlWithVisitCount = {
-  id: string;
-  shortCode: string;
-  longUrl: string;
-  createdAt: Date;
-  updatedAt: Date;
-  _count: {
-    visits: number;
-  };
-};
+// The correct type interface for route handlers with dynamic params
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { shortcode: string } }
+) {
+  const shortCode = params.shortcode;
 
-// POST /api/url - Create a new short URL
-export async function POST(request: NextRequest) {
+  // Debug log to verify the shortCode is being correctly received
+  console.log("Received shortCode:", shortCode);
+
   try {
-    const { url } = await request.json();
-    
-    // Validate URL without capturing unused variable
-    if (!isValidUrl(url)) {
+    // Look up the URL in the database
+    const url = await prisma.url.findUnique({
+      where: {
+        shortCode,
+      },
+    });
+
+    // If URL doesn't exist, return 404
+    if (!url) {
       return NextResponse.json(
-        { error: "Invalid URL. Please provide a valid URL." },
-        { status: 400 }
+        { error: "Short URL not found" },
+        { status: 404 }
       );
     }
 
-    // Generate a short code
-    const shortCode = nanoid(6); // 6 character unique ID
+    // Get client info for analytics
+    const userAgent = request.headers.get("user-agent") || "";
+    const referer = request.headers.get("referer") || "";
     
-    // Create new URL record
-    const newUrl = await prisma.url.create({
+    // Fix IP address extraction
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : "unknown";
+
+    // Track the visit
+    await prisma.visit.create({
       data: {
-        shortCode,
-        longUrl: url,
+        urlId: url.id,
+        ip: ip,
+        userAgent,
+        referrer: referer,
       },
     });
 
-    return NextResponse.json({
-      id: newUrl.id,
-      shortCode: newUrl.shortCode,
-      longUrl: newUrl.longUrl,
-      shortUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${newUrl.shortCode}`,
-      createdAt: newUrl.createdAt,
-    });
+    // Redirect to the original URL
+    return NextResponse.redirect(url.longUrl);
   } catch (error) {
-    console.error("Error creating short URL:", error);
+    console.error("Error processing redirect:", error);
     return NextResponse.json(
-      { error: "Failed to create short URL" },
-      { status: 500 }
-    );
-  }
-}
-
-// Helper function to validate URLs
-function isValidUrl(urlString: string): boolean {
-  try {
-    new URL(urlString);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// GET /api/url - List all URLs
-export async function GET() {
-  try {
-    const urls = await prisma.url.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        _count: {
-          select: { visits: true },
-        },
-      },
-    });
-
-    // Add proper typing to the urls array
-    const urlsWithShortUrl = (urls as UrlWithVisitCount[]).map((url) => ({
-      id: url.id,
-      shortCode: url.shortCode,
-      longUrl: url.longUrl,
-      shortUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${url.shortCode}`,
-      createdAt: url.createdAt,
-      visits: url._count.visits,
-    }));
-
-    return NextResponse.json(urlsWithShortUrl);
-  } catch (error) {
-    console.error("Error fetching URLs:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch URLs" },
+      { error: "Failed to process the redirect" },
       { status: 500 }
     );
   }
