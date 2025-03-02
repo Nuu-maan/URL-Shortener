@@ -1,32 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma"; // ✅ Ensure Prisma is imported correctly
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shortcode?: string } }
+  { params }: { params: { shortcode: string } } // ✅ Fix casing to match route
 ) {
   if (!params?.shortcode) {
     return NextResponse.json({ error: "Invalid short URL" }, { status: 400 });
   }
 
-  const shortCode = params.shortcode.trim();
-  console.log("Received shortCode:", shortCode);
+  const shortcode = params.shortcode.trim();
+  console.log("Received shortcode:", shortcode);
 
   try {
-    const url = await prisma.url.findUnique({
-      where: { shortCode },
-      select: { id: true, longUrl: true }, // Select only needed fields
+    // ✅ Find the original URL in the database
+    const urlEntry = await prisma.url.findUnique({
+      where: { shortCode: shortcode }, // Ensure this matches your Prisma schema
+      select: { id: true, longUrl: true },
     });
 
-    if (!url) {
+    if (!urlEntry) {
       return NextResponse.json({ error: "Short URL not found" }, { status: 404 });
     }
 
-    // Redirect immediately
-    const redirectResponse = NextResponse.redirect(url.longUrl);
+    // ✅ Use 301 Redirect for better SEO
+    const redirectResponse = NextResponse.redirect(urlEntry.longUrl, 301);
 
-    // Track visit asynchronously (non-blocking)
-    trackVisit(url.id, request);
+    // ✅ Track visit asynchronously
+    trackVisit(urlEntry.id, request).catch((err) =>
+      console.error("Error tracking visit:", err)
+    );
 
     return redirectResponse;
   } catch (error) {
@@ -35,6 +38,7 @@ export async function GET(
   }
 }
 
+// ✅ Non-blocking visit tracking function
 async function trackVisit(urlId: number, request: NextRequest) {
   try {
     const userAgent = request.headers.get("user-agent") || "unknown";

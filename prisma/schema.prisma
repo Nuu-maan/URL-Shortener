@@ -8,22 +8,20 @@ datasource db {
 }
 
 model Url {
-  id        Int      @id @default(autoincrement())
-  shortCode String   @unique
+  id        Int     @id @default(autoincrement())
   longUrl   String
-  userId    String?  // Nullable for guest users
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  shortCode String  @unique
+  userId    String? // If using authentication
   visits    Visit[]
+  createdAt DateTime @default(now()) // Ensure this line exists
+
 }
 
-
 model Visit {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   urlId     Int
-  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade) // 🔥 Ensures clean DB
-  ip        String
-  userAgent String
-  referrer  String
-  createdAt DateTime @default(now())
+  ip        String?
+  userAgent String?
+  referrer  String?
+  url       Url     @relation(fields: [urlId], references: [id], onDelete: Cascade)
 }
