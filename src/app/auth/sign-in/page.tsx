@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession(); // ✅ Removed unused `session`
   const router = useRouter();
 
   // Redirect if user is already authenticated

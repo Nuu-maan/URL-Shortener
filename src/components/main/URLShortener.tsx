@@ -1,42 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, Copy, Link as LinkIcon, Loader2 } from "lucide-react";
-import { useSession } from "next-auth/react";
 
 export function URLShortener() {
-  const { data: session } = useSession(); // Get session data
-  const isAuthenticated = !!session; // Check if user is logged in
-
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [anonLinkCount, setAnonLinkCount] = useState(0);
-
-  useEffect(() => {
-    // Get anonymous user link count from localStorage
-    const storedCount = Number(localStorage.getItem("anonLinkCount")) || 0;
-    setAnonLinkCount(storedCount);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url.trim()) return; // Prevent empty submission
-
-    // If user is not signed in, check link creation limit
-    if (!isAuthenticated && anonLinkCount >= 3) {
-      setError("Guest users can only create 3 short links. Please sign in!");
-      return;
-    }
+    if (!url.trim()) return;
 
     try {
       setIsLoading(true);
       setError("");
+      setShortUrl(""); // Reset previous short URL on new request
 
       const response = await fetch("/api/url", {
         method: "POST",
@@ -46,15 +30,17 @@ export function URLShortener() {
         body: JSON.stringify({ url }),
       });
 
+      console.log("Response Status:", response.status);
+
       let data;
       const text = await response.text();
-      console.log("Raw Response:", text); // Debugging
+      console.log("Raw Response Text:", text);
 
       try {
         data = text ? JSON.parse(text) : {};
       } catch (error) {
         console.error("JSON Parsing Error:", error);
-        throw new Error("Invalid response from server");
+        throw new Error("Unexpected response from server");
       }
 
       if (!response.ok) {
@@ -63,16 +49,9 @@ export function URLShortener() {
       }
 
       setShortUrl(data.shortUrl);
-
-      // If user is not signed in, increment link count
-      if (!isAuthenticated) {
-        const newCount = anonLinkCount + 1;
-        localStorage.setItem("anonLinkCount", newCount.toString());
-        setAnonLinkCount(newCount);
-      }
     } catch (err) {
       console.error("Error creating short URL:", err);
-      setError(err instanceof Error ? err.message : "Failed to create short URL");
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -100,13 +79,13 @@ export function URLShortener() {
               className="flex-1"
               disabled={isLoading}
             />
-            <Button type="submit" disabled={!url.trim() || isLoading || (!isAuthenticated && anonLinkCount >= 3)}>
+            <Button type="submit" disabled={!url.trim() || isLoading}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <LinkIcon className="mr-2 h-4 w-4" />
               )}
-              Shorten URL
+              Shorten
             </Button>
           </div>
 
@@ -120,14 +99,15 @@ export function URLShortener() {
             <div className="mt-4 p-4 bg-muted rounded-lg">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium truncate flex-1">
-                  {shortUrl}
+                  <a href={shortUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {shortUrl}
+                  </a>
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={copyToClipboard}
                   className="flex-shrink-0"
-                  aria-live="polite"
                 >
                   {copied ? (
                     <>
@@ -145,13 +125,6 @@ export function URLShortener() {
             </div>
           )}
         </form>
-
-        {/* Display guest user limit */}
-        {!isAuthenticated && (
-          <p className="mt-4 text-sm text-gray-500">
-            Guest users can create up to 3 short links. <b>{3 - anonLinkCount} remaining.</b>
-          </p>
-        )}
       </CardContent>
     </Card>
   );
