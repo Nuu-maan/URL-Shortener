@@ -1,29 +1,29 @@
-// This is your Prisma schema file
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "sqlite" // Change this to "postgresql" or "mysql" for production
   url      = env("DATABASE_URL")
 }
 
 model Url {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   shortCode String   @unique
   longUrl   String
+  userId    String?  // Nullable for guest users
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   visits    Visit[]
 }
 
+
 model Visit {
-  id        String   @id @default(cuid())
-  urlId     String
-  url       Url      @relation(fields: [urlId], references: [id])
-  ip        String?
-  userAgent String?
-  referrer  String?
-  timestamp DateTime @default(now())
-} 
+  id        Int      @id @default(autoincrement())
+  urlId     Int
+  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade) // 🔥 Ensures clean DB
+  ip        String
+  userAgent String
+  referrer  String
+  createdAt DateTime @default(now())
+}

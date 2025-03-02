@@ -1,29 +1,31 @@
-// src/app/[shortcode]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma"; // Use a shared Prisma instance
 
 type RouteParams = {
   shortcode: string;
-}
+};
 
-// Using the simplest approach with direct access to params
 export async function GET(
   request: NextRequest,
-  { params }: { params: RouteParams }
+  context: { params?: RouteParams } // ✅ Handle possible undefined params
 ) {
-  const shortCode = params.shortcode;
+  if (!context.params) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
 
-  // Debug log to verify the shortCode is being correctly received
+  const shortCode = context.params.shortcode;
+
+  // ✅ Ignore favicon.ico requests
+  if (shortCode === "favicon.ico") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   console.log("Received shortCode:", shortCode);
 
   try {
     // Look up the URL in the database
     const url = await prisma.url.findUnique({
-      where: {
-        shortCode,
-      },
+      where: { shortCode },
     });
 
     // If URL doesn't exist, return 404
@@ -34,19 +36,17 @@ export async function GET(
       );
     }
 
-    // Get client info for analytics
+    // Extract client info for analytics
     const userAgent = request.headers.get("user-agent") || "";
     const referer = request.headers.get("referer") || "";
-    
-    // Fix IP address extraction
     const forwardedFor = request.headers.get("x-forwarded-for");
-    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : "unknown";
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown";
 
-    // Track the visit
+    // Track the visit in the database
     await prisma.visit.create({
       data: {
         urlId: url.id,
-        ip: ip,
+        ip,
         userAgent,
         referrer: referer,
       },
