@@ -5,12 +5,14 @@ import { ActivitySquare, Link as LinkIcon, Users, Trash2 } from "lucide-react";
 import { AnalyticCard } from "./AnalyticCard";
 
 interface UrlData {
-  id: string;
+  id: number;
   shortCode: string;
   longUrl: string;
-  shortUrl?: string;
   createdAt: string;
-  visits: number;
+  visits: {
+    id: number;
+  }[];
+  totalVisits?: number;
 }
 
 export function Analytics() {
@@ -37,7 +39,13 @@ export function Analytics() {
         const fetchedUrls: UrlData[] = await response.json();
         if (!Array.isArray(fetchedUrls)) throw new Error("Invalid URL response");
 
-        setUrls(fetchedUrls);
+        // Process URLs to add totalVisits
+        const processedUrls = fetchedUrls.map(url => ({
+          ...url,
+          totalVisits: url.visits.length
+        }));
+
+        setUrls(processedUrls);
 
         // Fetch user stats
         const userStatsResponse = await fetch("/api/analytics/users");
@@ -48,18 +56,18 @@ export function Analytics() {
           throw new Error("Invalid user stats response");
 
         // Compute analytics
-        const totalLinks = fetchedUrls.length;
-        const totalClicks = fetchedUrls.reduce((sum, url) => sum + (url.visits || 0), 0);
+        const totalLinks = processedUrls.length;
+        const totalClicks = processedUrls.reduce((sum, url) => sum + url.visits.length, 0);
 
         // Month-based calculations
         const now = new Date();
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-        const currentMonthLinks = fetchedUrls.filter(
+        const currentMonthLinks = processedUrls.filter(
           (url) => new Date(url.createdAt) >= currentMonthStart
         ).length;
-        const previousMonthLinks = fetchedUrls.filter(
+        const previousMonthLinks = processedUrls.filter(
           (url) =>
             new Date(url.createdAt) >= previousMonthStart &&
             new Date(url.createdAt) < currentMonthStart
@@ -75,11 +83,11 @@ export function Analytics() {
         const linkChange =
           previousMonthLinks > 0
             ? (((currentMonthLinks - previousMonthLinks) / previousMonthLinks) * 100).toFixed(1)
-            : "100%";
+            : "100";
         const clickChange =
-          prevClicks > 0 ? (((currClicks - prevClicks) / prevClicks) * 100).toFixed(1) : "100%";
+          prevClicks > 0 ? (((currClicks - prevClicks) / prevClicks) * 100).toFixed(1) : "100";
         const userChange =
-          prevUsers > 0 ? (((currUsers - prevUsers) / prevUsers) * 100).toFixed(1) : "100%";
+          prevUsers > 0 ? (((currUsers - prevUsers) / prevUsers) * 100).toFixed(1) : "100";
 
         setAnalytics({
           totalLinks,
@@ -100,7 +108,7 @@ export function Analytics() {
   }, []);
 
   // Delete URL function
-  async function deleteUrl(id: string) {
+  async function deleteUrl(id: number) {
     if (!confirm("Are you sure you want to delete this link?")) return;
 
     try {
@@ -120,21 +128,21 @@ export function Analytics() {
         <AnalyticCard
           title="Total Links"
           value={analytics.totalLinks}
-          change={`${analytics.linkChange} from last month`}
+          change={`${analytics.linkChange}% from last month`}
           Icon={LinkIcon}
           loading={loading}
         />
         <AnalyticCard
           title="Total Clicks"
           value={analytics.totalClicks}
-          change={`${analytics.clickChange} from last month`}
+          change={`${analytics.clickChange}% from last month`}
           Icon={ActivitySquare}
           loading={loading}
         />
         <AnalyticCard
           title="Active Users"
           value={analytics.activeUsers}
-          change={`${analytics.userChange} from last month`}
+          change={`${analytics.userChange}% from last month`}
           Icon={Users}
           loading={loading}
         />
@@ -159,12 +167,12 @@ export function Analytics() {
                 <tr key={url.id} className="border-b border-gray-800">
                   <td className="py-2">
                     <a
-                      href={url.shortUrl || `/${url.shortCode}`}
+                      href={`/${url.shortCode}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-400"
                     >
-                      {url.shortUrl || `/${url.shortCode}`}
+                      /{url.shortCode}
                     </a>
                   </td>
                   <td className="py-2 truncate max-w-[200px]">
@@ -178,7 +186,7 @@ export function Analytics() {
                     </a>
                   </td>
                   <td className="py-2">{new Date(url.createdAt).toLocaleDateString()}</td>
-                  <td className="py-2 text-center">{url.visits}</td>
+                  <td className="py-2 text-center">{url.totalVisits}</td>
                   <td className="py-2 text-center">
                     <button
                       onClick={() => deleteUrl(url.id)}
