@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ActivitySquare, Link as LinkIcon, Users, Trash2 } from "lucide-react";
+import { ActivitySquare, Link as LinkIcon, Users, Trash2, ExternalLink, Search } from "lucide-react";
 import { AnalyticCard } from "./AnalyticCard";
+import { motion, AnimatePresence } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface UrlData {
   id: number;
@@ -15,6 +19,19 @@ interface UrlData {
   totalVisits?: number;
 }
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
+
 export function Analytics() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState({
@@ -26,6 +43,7 @@ export function Analytics() {
     userChange: "0%",
   });
   const [urls, setUrls] = useState<UrlData[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -99,6 +117,7 @@ export function Analytics() {
         });
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
+        toast.error("Failed to fetch analytics data");
       } finally {
         setLoading(false);
       }
@@ -116,15 +135,28 @@ export function Analytics() {
       if (!response.ok) throw new Error("Failed to delete URL");
 
       setUrls((prevUrls) => prevUrls.filter((url) => url.id !== id));
+      toast.success("Link deleted successfully");
     } catch (error) {
       console.error("Failed to delete link:", error);
+      toast.error("Failed to delete link");
     }
   }
 
+  // Filter URLs based on search term
+  const filteredUrls = urls.filter(url => 
+    url.longUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    url.shortCode.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-8"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
       {/* Analytics Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <motion.div variants={item} className="grid gap-4 md:grid-cols-3">
         <AnalyticCard
           title="Total Links"
           value={analytics.totalLinks}
@@ -146,67 +178,102 @@ export function Analytics() {
           Icon={Users}
           loading={loading}
         />
-      </div>
+      </motion.div>
 
       {/* Links Table */}
-      <div className="bg-gray-900 p-4 rounded-lg">
-        <h2 className="text-lg font-semibold text-white">Recent Links</h2>
-        <table className="w-full mt-4 text-sm text-gray-300">
-          <thead>
-            <tr className="text-gray-500 border-b border-gray-800">
-              <th className="py-2 text-left">Short URL</th>
-              <th className="py-2 text-left">Original URL</th>
-              <th className="py-2 text-left">Created</th>
-              <th className="py-2 text-center">Visits</th>
-              <th className="py-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {urls.length > 0 ? (
-              urls.map((url) => (
-                <tr key={url.id} className="border-b border-gray-800">
-                  <td className="py-2">
-                    <a
-                      href={`/${url.shortCode}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400"
-                    >
-                      /{url.shortCode}
-                    </a>
-                  </td>
-                  <td className="py-2 truncate max-w-[200px]">
-                    <a
-                      href={url.longUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-400"
-                    >
-                      {url.longUrl}
-                    </a>
-                  </td>
-                  <td className="py-2">{new Date(url.createdAt).toLocaleDateString()}</td>
-                  <td className="py-2 text-center">{url.totalVisits}</td>
-                  <td className="py-2 text-center">
-                    <button
-                      onClick={() => deleteUrl(url.id)}
-                      className="text-red-500 hover:text-red-700 transition"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center py-4 text-gray-500">
-                  No links found
-                </td>
+      <motion.div variants={item} className="rounded-xl border bg-card">
+        <div className="p-6 flex flex-col sm:flex-row gap-4 items-center justify-between border-b">
+          <h2 className="text-lg font-semibold">Recent Links</h2>
+          <div className="relative w-full sm:w-64">
+            <Input
+              placeholder="Search links..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="py-3 px-4 text-left font-medium">Short URL</th>
+                <th className="py-3 px-4 text-left font-medium">Original URL</th>
+                <th className="py-3 px-4 text-left font-medium">Created</th>
+                <th className="py-3 px-4 text-center font-medium">Visits</th>
+                <th className="py-3 px-4 text-center font-medium">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+            </thead>
+            <tbody>
+              <AnimatePresence mode="wait">
+                {filteredUrls.length > 0 ? (
+                  filteredUrls.map((url) => (
+                    <motion.tr
+                      key={url.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="border-b transition-colors hover:bg-muted/50"
+                    >
+                      <td className="py-3 px-4">
+                        <a
+                          href={`/${url.shortCode}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline flex items-center gap-1 font-medium"
+                        >
+                          /{url.shortCode}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="max-w-[300px]">
+                          <a
+                            href={url.longUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-foreground truncate block transition-colors"
+                          >
+                            {url.longUrl}
+                          </a>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground">
+                        {new Date(url.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-center font-medium">
+                        {url.totalVisits}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteUrl(url.id)}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </td>
+                    </motion.tr>
+                  ))
+                ) : (
+                  <motion.tr
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                      {searchTerm ? "No matching links found" : "No links found"}
+                    </td>
+                  </motion.tr>
+                )}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
