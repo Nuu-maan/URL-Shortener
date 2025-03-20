@@ -22,9 +22,49 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
+const features = [
+  {
+    icon: <Zap className="h-6 w-6" />,
+    title: "Lightning Fast",
+    description: "Generate short URLs instantly with our optimized infrastructure"
+  },
+  {
+    icon: <BarChart2 className="h-6 w-6" />,
+    title: "Detailed Analytics",
+    description: "Track clicks, locations, and engagement with real-time analytics"
+  },
+  {
+    icon: <Shield className="h-6 w-6" />,
+    title: "Secure by Default",
+    description: "All shortened URLs are encrypted and protected against abuse"
+  }
+];
+
+const stats = [
+  {
+    title: "Links Shortened",
+    value: "1M+",
+  },
+  {
+    title: "Active Users",
+    value: "100K+",
+  },
+  {
+    title: "Uptime",
+    value: "99.9%",
+  },
+];
+
 export default function Home() {
   return (
-    <main className="min-h-[calc(100vh-4rem)]">
+    <main className="min-h-[calc(100vh-4rem)] relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
+      </div>
+
       <div className="container mx-auto px-4 py-16 sm:py-24">
         {/* Hero Section */}
         <motion.div 
@@ -68,99 +108,72 @@ export default function Home() {
 
         {/* URL Shortener Card */}
         <motion.div 
-          className="max-w-2xl mx-auto"
+          className="max-w-2xl mx-auto mb-32"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="glass p-1 rounded-xl">
+          <div className="glass p-1 rounded-2xl shadow-2xl shadow-primary/10">
             <URLShortener />
           </div>
         </motion.div>
 
         {/* Features Grid */}
-        <motion.div 
+        <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-24"
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className="group p-6 rounded-xl border bg-card/50 backdrop-blur-sm hover:bg-card/80 text-card-foreground hover:shadow-xl transition-all duration-300"
+              className="group relative p-8 rounded-2xl border bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-colors duration-300"
             >
-              <div className="flex items-center gap-4 mb-3">
-                <div className="p-2.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex flex-col items-center text-center space-y-4">
+                <div className="p-4 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
                   {feature.icon}
                 </div>
-                <h3 className="font-semibold text-lg">{feature.title}</h3>
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
               </div>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}
         </motion.div>
 
         {/* Stats Section */}
         <motion.div 
-          className="mt-24 text-center"
+          className="relative"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl font-bold mb-12">Trusted by thousands of users</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="p-6 rounded-xl bg-card/50 backdrop-blur-sm"
-              >
-                <div className="text-4xl font-bold text-primary mb-2">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </motion.div>
-            ))}
+          <div className="absolute inset-0 -z-10 bg-primary/5 rounded-3xl blur-3xl" />
+          <div className="relative px-8 py-16 rounded-3xl border bg-background/50 backdrop-blur-sm">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              Trusted by thousands of users
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={stat.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="group p-6 rounded-xl bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300"
+                >
+                  <div className="text-4xl font-bold text-primary mb-2">{stat.value}</div>
+                  <div className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">{stat.title}</div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>
     </main>
   );
 }
-
-const features = [
-  {
-    title: "Lightning Fast",
-    description: "Generate short URLs instantly with our optimized infrastructure",
-    icon: <Zap className="h-5 w-5 text-primary" />,
-  },
-  {
-    title: "Detailed Analytics",
-    description: "Track clicks, locations, and engagement with real-time analytics",
-    icon: <BarChart2 className="h-5 w-5 text-primary" />,
-  },
-  {
-    title: "Secure by Default",
-    description: "All shortened URLs are encrypted and protected against abuse",
-    icon: <Shield className="h-5 w-5 text-primary" />,
-  },
-];
-
-const stats = [
-  {
-    value: "1M+",
-    label: "Links Shortened"
-  },
-  {
-    value: "100K+",
-    label: "Active Users"
-  },
-  {
-    value: "99.9%",
-    label: "Uptime"
-  }
-];

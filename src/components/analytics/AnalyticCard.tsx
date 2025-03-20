@@ -1,14 +1,14 @@
 "use client";
 
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface AnalyticCardProps {
   title: string;
-  value: number | undefined; // Allow undefined to prevent crashes
-  change: string;
-  Icon: LucideIcon;
+  value: string | number;
+  change?: number;
+  Icon?: LucideIcon;
   loading?: boolean;
 }
 
@@ -19,26 +19,51 @@ export function AnalyticCard({
   Icon,
   loading = false,
 }: AnalyticCardProps) {
-  return (
-    <div className="rounded-lg border bg-card p-6 text-card-foreground shadow">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium tracking-wide">{title}</h3>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      {loading ? (
-        <div className="mt-2 space-y-2">
-          <div className="h-8 w-24 animate-pulse rounded bg-muted"></div>
-          
-          <div className="h-4 w-32 animate-pulse rounded bg-muted"></div>
-        </div>
-      ) : (
-        <>
-          <div className="mt-2 text-3xl font-bold">
-            {typeof value === "number" ? value.toLocaleString() : "N/A"}
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-4 w-[60px]" />
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">{change}</p>
-        </>
-      )}
-    </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <div className="flex items-center space-x-2">
+              <p className="text-2xl font-bold">{value}</p>
+              {change !== undefined && (
+                <span
+                  className={
+                    change >= 0
+                      ? "text-sm font-medium text-green-600"
+                      : "text-sm font-medium text-red-600"
+                  }
+                >
+                  {change >= 0 ? "+" : ""}
+                  {change}%
+                </span>
+              )}
+            </div>
+          </div>
+          {Icon && (
+            <div className="p-3 rounded-full bg-primary/10">
+              <Icon className="h-5 w-5 text-primary" />
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
