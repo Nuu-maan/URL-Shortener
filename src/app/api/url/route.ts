@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle GET request for user-specific analytics
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
