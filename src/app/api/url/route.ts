@@ -28,14 +28,29 @@ export async function POST(request: NextRequest) {
 
       if (guestLinks >= MAX_GUEST_LINKS) {
         return NextResponse.json(
-          { error: "Guest users can create only 3 short links. Please sign in!" },
+          { 
+            error: "Guest users can create only 3 short links. Please sign in!",
+            requiresSignIn: true 
+          },
           { status: 403 }
         );
       }
 
+      // Create URL for guest user
+      const newUrl = await prisma.url.create({
+        data: {
+          longUrl: url,
+          shortCode,
+          // No userId for guest users
+        },
+      });
+
       // Increment guest link count in cookies
       const response = NextResponse.json(
-        { shortUrl: `${baseUrl}/${shortCode}` },
+        { 
+          shortUrl: `${baseUrl}/${shortCode}`,
+          remainingLinks: MAX_GUEST_LINKS - (guestLinks + 1)
+        },
         { status: 201 }
       );
 
@@ -50,21 +65,19 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // Ensure user ID is available
-    if (!session.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     // Logged-in user logic - unlimited URLs
     const newUrl = await prisma.url.create({
       data: {
         longUrl: url,
         shortCode,
-        userId: session.user.id, // Ensure session user ID exists
+        userId: session.user?.id,
       },
     });
 
-    return NextResponse.json({ shortUrl: `${baseUrl}/${newUrl.shortCode}` }, { status: 201 });
+    return NextResponse.json({ 
+      shortUrl: `${baseUrl}/${newUrl.shortCode}`,
+      isAuthenticated: true
+    }, { status: 201 });
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(
@@ -74,18 +87,53 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Handle GET request for user-specific analytics
-export async function GET() {
+// Handle GET request for analytics
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
+    // For guest users, get URLs from their cookie
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const guestLinks = request.cookies.get("guestLinks")?.value;
+      if (!guestLinks) {
+        return NextResponse.json([], { status: 200 });
+      }
+
+      // Get the most recent URLs without a userId (guest URLs)
+      const recentGuestUrls = await prisma.url.findMany({
+        where: {
+          userId: null
+        },
+        take: parseInt(guestLinks),
+        orderBy: {
+          createdAt: 'desc'
+        },
+        select: {
+          id: true,
+          shortCode: true,
+          longUrl: true,
+          createdAt: true,
+          visits: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      const formattedGuestUrls = recentGuestUrls.map(url => ({
+        ...url,
+        totalVisits: url.visits.length,
+      }));
+
+      return NextResponse.json(formattedGuestUrls, { status: 200 });
     }
 
-    // Fetch all links created by the user
+    // For authenticated users, get their URLs
     const userLinks = await prisma.url.findMany({
-      where: { userId: session.user.id },
+      where: { 
+        userId: session.user.id 
+      },
       select: {
         id: true,
         shortCode: true,
@@ -93,19 +141,18 @@ export async function GET() {
         createdAt: true,
         visits: {
           select: {
-            id: true, // Visit ID (if needed)
+            id: true,
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
 
-    // Map visits count for each URL
     const formattedLinks = userLinks.map(link => ({
       ...link,
-      totalVisits: link.visits.length, // Count visits
+      totalVisits: link.visits.length,
     }));
 
     return NextResponse.json(formattedLinks, { status: 200 });

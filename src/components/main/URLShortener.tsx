@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, Copy, Link as LinkIcon, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export function URLShortener() {
   const [url, setUrl] = useState("");
@@ -12,6 +13,7 @@ export function URLShortener() {
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [remainingLinks, setRemainingLinks] = useState<number | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +32,8 @@ export function URLShortener() {
         body: JSON.stringify({ url }),
       });
 
-      console.log("Response Status:", response.status);
-
       let data;
       const text = await response.text();
-      console.log("Raw Response Text:", text);
-
       try {
         data = text ? JSON.parse(text) : {};
       } catch (error) {
@@ -44,11 +42,23 @@ export function URLShortener() {
       }
 
       if (!response.ok) {
-        console.error("Server Error:", data);
+        if (data.requiresSignIn) {
+          // Show sign in prompt
+          const shouldSignIn = window.confirm(
+            "You've used all your guest links. Would you like to sign in for unlimited links?"
+          );
+          if (shouldSignIn) {
+            signIn(undefined, { callbackUrl: window.location.href });
+            return;
+          }
+        }
         throw new Error(data.error || "Failed to create short URL");
       }
 
       setShortUrl(data.shortUrl);
+      if (typeof data.remainingLinks === 'number') {
+        setRemainingLinks(data.remainingLinks);
+      }
     } catch (err) {
       console.error("Error creating short URL:", err);
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -92,6 +102,12 @@ export function URLShortener() {
           {error && (
             <div className="mt-2 text-sm text-red-500">
               {error}
+            </div>
+          )}
+
+          {remainingLinks !== null && (
+            <div className="mt-2 text-sm text-gray-500">
+              {remainingLinks} guest links remaining. <button onClick={() => signIn()} className="text-blue-500 hover:underline">Sign in</button> for unlimited links!
             </div>
           )}
 
