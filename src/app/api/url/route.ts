@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
 
     // Generate a short code (6 characters, alphanumeric)
     const shortCode = Math.random().toString(36).substring(2, 8);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    
+    // Get base URL from environment or request URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+      `${request.nextUrl.protocol}//${request.headers.get("host")}`;
 
     if (!session) {
       // Guest user logic - track via cookies
