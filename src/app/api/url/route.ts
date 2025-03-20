@@ -1,5 +1,3 @@
-// src/app/api/url/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Ensure correct Prisma import
 import { getServerSession } from "next-auth";
@@ -49,12 +47,17 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
+    // Ensure user ID is available
+    if (!session.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Logged-in user logic - unlimited URLs
     const newUrl = await prisma.url.create({
       data: {
         longUrl: url,
         shortCode,
-        userId: session.user?.id, // Ensure session user ID exists
+        userId: session.user.id, // Ensure session user ID exists
       },
     });
 
@@ -63,6 +66,50 @@ export async function POST(request: NextRequest) {
     console.error("API Error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+// Handle GET request for user-specific analytics
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Fetch all links created by the user
+    const userLinks = await prisma.url.findMany({
+      where: { userId: session.user.id },
+      select: {
+        id: true,
+        shortCode: true,
+        longUrl: true,
+        createdAt: true,
+        visits: {
+          select: {
+            id: true, // Visit ID (if needed)
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Map visits count for each URL
+    const formattedLinks = userLinks.map(link => ({
+      ...link,
+      totalVisits: link.visits.length, // Count visits
+    }));
+
+    return NextResponse.json(formattedLinks, { status: 200 });
+  } catch (error) {
+    console.error("API Error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

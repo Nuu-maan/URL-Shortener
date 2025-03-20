@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // Change this to "postgresql" or "mysql" for production
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("DATABASE_URL")
 }
 
 model Url {
@@ -13,15 +13,15 @@ model Url {
   shortCode String  @unique
   userId    String? // If using authentication
   visits    Visit[]
-  createdAt DateTime @default(now()) // Ensure this line exists
-
+  createdAt DateTime @default(now())
 }
 
 model Visit {
-  id        Int     @id @default(autoincrement())
-  urlId     Int
-  ip        String?
-  userAgent String?
-  referrer  String?
-  url       Url     @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  urlId      Int
+  url        Url      @relation(fields: [urlId], references: [id])
+  ip         String?
+  userAgent  String?
+  referrer   String?
+  createdAt  DateTime @default(now())
 }

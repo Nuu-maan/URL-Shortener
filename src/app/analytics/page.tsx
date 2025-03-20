@@ -11,18 +11,22 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      signIn(); // Redirect to sign-in page
+      signIn(undefined, { callbackUrl: "/analytics" }); // Redirects back after login
     }
-  }, [status, router]);
+  }, [status]);
 
   if (status === "loading") {
-    return <p className="text-center">Loading...</p>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-lg font-semibold">Loading...</p>
+      </div>
+    );
   }
 
-  if (!session) return null; 
+  if (!session) return null; // Prevents rendering issues
 
   return (
-    <main className="container mx-auto p-4">
+    <main className="container mx-auto p-6">
       <div className="py-10">
         <h1 className="text-4xl font-bold text-center mb-8">
           Analytics Dashboard

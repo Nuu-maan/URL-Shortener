@@ -1,16 +1,22 @@
-"use client"
+"use client";
 
-import { LucideIcon } from "lucide-react"
+import { LucideIcon } from "lucide-react";
 
 interface AnalyticCardProps {
-  title: string
-  value: number
-  change: string
-  Icon: LucideIcon
-  loading?: boolean
+  title: string;
+  value: number | undefined; // Allow undefined to prevent crashes
+  change: string;
+  Icon: LucideIcon;
+  loading?: boolean;
 }
 
-export function AnalyticCard({ title, value, change, Icon, loading = false }: AnalyticCardProps) {
+export function AnalyticCard({
+  title,
+  value,
+  change,
+  Icon,
+  loading = false,
+}: AnalyticCardProps) {
   return (
     <div className="rounded-lg border bg-card p-6 text-card-foreground shadow">
       <div className="flex items-center justify-between">
@@ -20,14 +26,17 @@ export function AnalyticCard({ title, value, change, Icon, loading = false }: An
       {loading ? (
         <div className="mt-2 space-y-2">
           <div className="h-8 w-24 animate-pulse rounded bg-muted"></div>
+          
           <div className="h-4 w-32 animate-pulse rounded bg-muted"></div>
         </div>
       ) : (
         <>
-          <div className="mt-2 text-3xl font-bold">{value.toLocaleString()}</div>
+          <div className="mt-2 text-3xl font-bold">
+            {typeof value === "number" ? value.toLocaleString() : "N/A"}
+          </div>
           <p className="text-xs text-muted-foreground">{change}</p>
         </>
       )}
     </div>
-  )
+  );
 }

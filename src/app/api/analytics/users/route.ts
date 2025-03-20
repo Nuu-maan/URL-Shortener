@@ -5,67 +5,40 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // Calculate current month and previous month boundaries
+    // ✅ Get the first day of the current and previous month
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // Get unique IP counts for current month
-    const currentMonthUsers = await prisma.visit.findMany({
-      where: {
-        timestamp: {
-          gte: currentMonthStart,
-        },
-      },
-      select: {
-        ip: true,
-      },
-      distinct: ['ip'],
-    });
-
-    // Get unique IP counts for previous month
-    const previousMonthUsers = await prisma.visit.findMany({
-      where: {
-        timestamp: {
-          gte: previousMonthStart,
-          lt: currentMonthStart,
-        },
-      },
-      select: {
-        ip: true,
-      },
-      distinct: ['ip'],
-    });
-
-    // Get click counts
-    const currentMonthClicks = await prisma.visit.count({
-      where: {
-        timestamp: {
-          gte: currentMonthStart,
-        },
-      },
-    });
-
-    const previousMonthClicks = await prisma.visit.count({
-      where: {
-        timestamp: {
-          gte: previousMonthStart,
-          lt: currentMonthStart,
-        },
-      },
-    });
-
+    // ✅ Count unique visitors (based on IP) for the current and previous month
+    const [currentMonthUsers, previousMonthUsers, currentMonthClicks, previousMonthClicks] = await Promise.all([
+      prisma.visit.findMany({
+        where: { createdAt: { gte: currentMonthStart } }// ✅ Change `createdAt` → `timestamp`
+        select: { ip: true },
+        distinct: ['ip'],
+      }),
+      prisma.visit.findMany({
+        where: { timestamp: { gte: previousMonthStart, lt: currentMonthStart } },
+        select: { ip: true },
+        distinct: ['ip'],
+      }),
+      prisma.visit.count({
+        where: { timestamp: { gte: currentMonthStart } },
+      }),
+      prisma.visit.count({
+        where: { timestamp: { gte: previousMonthStart, lt: currentMonthStart } },
+      }),
+    ]);
+    
     return NextResponse.json({
-      currentMonthUsers: currentMonthUsers.length,
-      previousMonthUsers: previousMonthUsers.length,
-      currentMonthClicks,
-      previousMonthClicks,
+      currentMonthUsers: currentMonthUsers.length || 0, // Ensure it's always a number
+      previousMonthUsers: previousMonthUsers.length || 0,
+      currentMonthClicks: currentMonthClicks || 0,
+      previousMonthClicks: previousMonthClicks || 0,
     });
+    
   } catch (error) {
-    console.error("Error fetching user analytics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch user analytics" },
-      { status: 500 }
-    );
+    console.error("Error fetching analytics:", error);
+    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
   }
 }

@@ -3,19 +3,21 @@ import prisma from "@/lib/prisma"; // ✅ Ensure Prisma is imported correctly
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shortcode: string } } // ✅ Fix casing to match route
+  { params }: { params: { shortcode: string } }
 ) {
-  if (!params?.shortcode) {
+  // ✅ Extract shortcode from params or fallback from URL path
+  const shortcode = params?.shortcode?.trim() || extractShortcode(request.nextUrl.pathname);
+  
+  if (!shortcode) {
     return NextResponse.json({ error: "Invalid short URL" }, { status: 400 });
   }
 
-  const shortcode = params.shortcode.trim();
   console.log("Received shortcode:", shortcode);
 
   try {
     // ✅ Find the original URL in the database
     const urlEntry = await prisma.url.findUnique({
-      where: { shortCode: shortcode }, // Ensure this matches your Prisma schema
+      where: { shortCode: shortcode },
       select: { id: true, longUrl: true },
     });
 
@@ -23,10 +25,10 @@ export async function GET(
       return NextResponse.json({ error: "Short URL not found" }, { status: 404 });
     }
 
-    // ✅ Use 301 Redirect for better SEO
+    // ✅ 301 Redirect for SEO-friendly permanent redirection
     const redirectResponse = NextResponse.redirect(urlEntry.longUrl, 301);
 
-    // ✅ Track visit asynchronously
+    // ✅ Track visit asynchronously (non-blocking)
     trackVisit(urlEntry.id, request).catch((err) =>
       console.error("Error tracking visit:", err)
     );
@@ -38,13 +40,26 @@ export async function GET(
   }
 }
 
+// ✅ Function to extract `shortcode` from URL path
+function extractShortcode(pathname: string) {
+  const parts = pathname.split("/");
+  return parts[parts.length - 1] || null;
+}
+
 // ✅ Non-blocking visit tracking function
 async function trackVisit(urlId: number, request: NextRequest) {
   try {
     const userAgent = request.headers.get("user-agent") || "unknown";
     const referer = request.headers.get("referer") || "direct";
+
+    // ✅ Best way to get IP: x-forwarded-for (fallbacks included)
     const forwardedFor = request.headers.get("x-forwarded-for");
-    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "unknown";
+    const cloudflareIp = request.headers.get("cf-connecting-ip"); // Cloudflare support
+    const ip = forwardedFor
+      ? forwardedFor.split(",")[0].trim()
+      : cloudflareIp || "unknown";
+
+    console.log(`Tracking visit: ${ip} | ${userAgent} | ${referer}`);
 
     await prisma.visit.create({
       data: {
@@ -57,4 +72,4 @@ async function trackVisit(urlId: number, request: NextRequest) {
   } catch (err) {
     console.error("Error tracking visit:", err);
   }
-}
+} 

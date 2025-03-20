@@ -6,6 +6,16 @@ const protectedRoutes = ["/shorten", "/analytics"];
 
 export default withAuth(
   function middleware(req) {
+    // Forward shortcode requests to the appropriate API endpoint
+    const pathname = req.nextUrl.pathname;
+    if (pathname.length > 1 && !pathname.startsWith("/api") && !protectedRoutes.includes(pathname)) {
+      // This could be a shortened URL
+      const shortcode = pathname.slice(1); // Remove the leading slash
+      if (shortcode && shortcode.length > 0) {
+        // Redirect to our API handler for shortened URLs
+        return NextResponse.rewrite(new URL(`/api/url/shortcode/${shortcode}`, req.url));
+      }
+    }
     return NextResponse.next();
   },
   {
@@ -23,5 +33,5 @@ export default withAuth(
 
 // Apply middleware to specific routes
 export const config = {
-  matcher: ["/shorten", "/analytics"], // Protect these routes
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"], // Match all routes except Next.js internal routes
 };
