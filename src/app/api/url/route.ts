@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       // Increment guest link count in cookies
       const response = NextResponse.json(
         { 
-          shortUrl: `${baseUrl}/${shortCode}`,
+          shortUrl: `${baseUrl}/${newUrl.shortCode}`,
           remainingLinks: MAX_GUEST_LINKS - (guestLinks + 1)
         },
         { status: 201 }
