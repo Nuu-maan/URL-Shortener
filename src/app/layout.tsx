@@ -8,6 +8,26 @@ import { Link2, Twitter, Github, Linkedin } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const resources = [
+  { id: "docs", label: "Documentation", href: "#" },
+  { id: "api", label: "API Reference", href: "#" },
+  { id: "blog", label: "Blog", href: "#" },
+  { id: "support", label: "Support", href: "#" },
+];
+
+const company = [
+  { id: "about", label: "About", href: "#" },
+  { id: "careers", label: "Careers", href: "#" },
+  { id: "contact", label: "Contact", href: "#" },
+  { id: "partners", label: "Partners", href: "#" },
+];
+
+const social = [
+  { id: "twitter", Icon: Twitter, href: "#", label: "Twitter" },
+  { id: "github", Icon: Github, href: "#", label: "GitHub" },
+  { id: "linkedin", Icon: Linkedin, href: "#", label: "LinkedIn" },
+];
+
 export default function RootLayout({
   children,
 }: {
@@ -74,36 +94,26 @@ export default function RootLayout({
                     <div>
                       <h4 className="font-semibold mb-4">Resources</h4>
                       <ul className="space-y-3 text-sm">
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Documentation</a>
-                        </li>
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">API Reference</a>
-                        </li>
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Blog</a>
-                        </li>
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Support</a>
-                        </li>
+                        {resources.map(({ id, label, href }) => (
+                          <li key={id}>
+                            <a href={href} className="text-muted-foreground hover:text-foreground transition-colors">
+                              {label}
+                            </a>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                     
                     <div>
                       <h4 className="font-semibold mb-4">Company</h4>
                       <ul className="space-y-3 text-sm">
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">About</a>
-                        </li>
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Careers</a>
-                        </li>
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Contact</a>
-                        </li>
-                        <li>
-                          <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Partners</a>
-                        </li>
+                        {company.map(({ id, label, href }) => (
+                          <li key={id}>
+                            <a href={href} className="text-muted-foreground hover:text-foreground transition-colors">
+                              {label}
+                            </a>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                     
@@ -132,15 +142,16 @@ export default function RootLayout({
                       &copy; {new Date().getFullYear()} URLShort. All rights reserved.
                     </p>
                     <div className="flex items-center space-x-4">
-                      <a href="#" className="p-2 rounded-full hover:bg-accent transition-colors">
-                        <Twitter className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                      </a>
-                      <a href="#" className="p-2 rounded-full hover:bg-accent transition-colors">
-                        <Github className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                      </a>
-                      <a href="#" className="p-2 rounded-full hover:bg-accent transition-colors">
-                        <Linkedin className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                      </a>
+                      {social.map(({ id, Icon, href, label }) => (
+                        <a
+                          key={id}
+                          href={href}
+                          className="p-2 rounded-full hover:bg-accent transition-colors"
+                          aria-label={label}
+                        >
+                          <Icon className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                        </a>
+                      ))}
                     </div>
                   </div>
                 </div>

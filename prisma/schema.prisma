@@ -7,21 +7,41 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  image       String?
+  subscription String   @default("FREE")
+  urlCount    Int      @default(0)
+  urls        Url[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Url {
-  id        Int     @id @default(autoincrement())
-  longUrl   String
-  shortCode String  @unique
-  userId    String? // If using authentication
-  visits    Visit[]
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  longUrl     String
+  shortCode   String   @unique
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  visits      Visit[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  clicks      Int      @default(0)
+  customDomain String? @unique
+  isCustom    Boolean  @default(false)
+
+  @@index([userId])
+  @@index([shortCode])
 }
 
 model Visit {
-  id         Int      @id @default(autoincrement())
-  urlId      Int
-  url        Url      @relation(fields: [urlId], references: [id])
-  ip         String?
-  userAgent  String?
-  referrer   String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  urlId     String
+  url       Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  ip        String?
+  userAgent String?
+  referrer  String?
+  createdAt DateTime @default(now())
 }

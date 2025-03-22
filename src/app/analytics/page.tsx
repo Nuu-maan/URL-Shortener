@@ -1,6 +1,6 @@
 "use client";
 
-import { Analytics } from "@/components/analytics/analytics";
+import Analytics from "@/components/analytics/analytics";
 import { useSession, signIn } from "next-auth/react";
 import { useEffect } from "react";
 import { motion } from "framer-motion";

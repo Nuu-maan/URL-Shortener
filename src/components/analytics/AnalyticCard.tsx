@@ -1,69 +1,41 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface AnalyticCardProps {
   title: string;
-  value: string | number;
-  change?: number;
-  Icon?: LucideIcon;
+  value: number;
+  change: string;
+  Icon: LucideIcon;
   loading?: boolean;
 }
 
-export function AnalyticCard({
-  title,
-  value,
-  change,
-  Icon,
-  loading = false,
-}: AnalyticCardProps) {
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[100px]" />
-              <Skeleton className="h-4 w-[60px]" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+export function AnalyticCard({ title, value, change, Icon, loading }: AnalyticCardProps) {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <div className="flex items-center space-x-2">
-              <p className="text-2xl font-bold">{value}</p>
-              {change !== undefined && (
-                <span
-                  className={
-                    change >= 0
-                      ? "text-sm font-medium text-green-600"
-                      : "text-sm font-medium text-red-600"
-                  }
-                >
-                  {change >= 0 ? "+" : ""}
-                  {change}%
-                </span>
-              )}
-            </div>
-          </div>
-          {Icon && (
-            <div className="p-3 rounded-full bg-primary/10">
-              <Icon className="h-5 w-5 text-primary" />
-            </div>
-          )}
+    <motion.div
+      className="p-6 rounded-xl border bg-card hover:bg-card/80 transition-colors duration-300"
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
-      </CardContent>
-    </Card>
+        {loading ? (
+          <div className="animate-pulse h-4 w-20 bg-muted rounded" />
+        ) : (
+          <span className="text-sm text-muted-foreground">{change}</span>
+        )}
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+        {loading ? (
+          <div className="animate-pulse h-6 w-16 bg-muted rounded" />
+        ) : (
+          <p className="text-2xl font-bold">{value}</p>
+        )}
+      </div>
+    </motion.div>
   );
 }

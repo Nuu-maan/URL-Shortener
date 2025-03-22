@@ -8,15 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-interface UrlData {
-  id: number;
+interface Url {
+  id: string;
   shortCode: string;
   longUrl: string;
   createdAt: string;
-  visits: {
-    id: number;
-  }[];
-  totalVisits?: number;
+  totalVisits: number;
 }
 
 const container = {
@@ -32,18 +29,36 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
-export function Analytics() {
+export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState({
     totalLinks: 0,
     totalClicks: 0,
     activeUsers: 0,
-    linkChange: "0%",
-    clickChange: "0%",
-    userChange: "0%",
+    linkChange: 0,
+    clickChange: 0,
+    userChange: 0,
   });
-  const [urls, setUrls] = useState<UrlData[]>([]);
+  const [urls, setUrls] = useState<Url[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const fetchUrls = async () => {
+    try {
+      const response = await fetch("/api/url");
+      if (!response.ok) throw new Error("Failed to fetch URLs");
+      const data = await response.json();
+      setUrls(data);
+    } catch (error) {
+      console.error("Error fetching URLs:", error);
+      toast.error("Failed to fetch URLs. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUrls();
+  }, []);
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -54,16 +69,10 @@ export function Analytics() {
         const response = await fetch("/api/url");
         if (!response.ok) throw new Error("Failed to fetch URLs");
 
-        const fetchedUrls: UrlData[] = await response.json();
+        const fetchedUrls: Url[] = await response.json();
         if (!Array.isArray(fetchedUrls)) throw new Error("Invalid URL response");
 
-        // Process URLs to add totalVisits
-        const processedUrls = fetchedUrls.map(url => ({
-          ...url,
-          totalVisits: url.visits.length
-        }));
-
-        setUrls(processedUrls);
+        setUrls(fetchedUrls);
 
         // Fetch user stats
         const userStatsResponse = await fetch("/api/analytics/users");
@@ -74,18 +83,18 @@ export function Analytics() {
           throw new Error("Invalid user stats response");
 
         // Compute analytics
-        const totalLinks = processedUrls.length;
-        const totalClicks = processedUrls.reduce((sum, url) => sum + url.visits.length, 0);
+        const totalLinks = fetchedUrls.length;
+        const totalClicks = fetchedUrls.reduce((sum, url) => sum + url.totalVisits, 0);
 
         // Month-based calculations
         const now = new Date();
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-        const currentMonthLinks = processedUrls.filter(
+        const currentMonthLinks = fetchedUrls.filter(
           (url) => new Date(url.createdAt) >= currentMonthStart
         ).length;
-        const previousMonthLinks = processedUrls.filter(
+        const previousMonthLinks = fetchedUrls.filter(
           (url) =>
             new Date(url.createdAt) >= previousMonthStart &&
             new Date(url.createdAt) < currentMonthStart
@@ -111,9 +120,9 @@ export function Analytics() {
           totalLinks,
           totalClicks,
           activeUsers: currUsers,
-          linkChange: linkChange.startsWith("-") ? linkChange : `+${linkChange}`,
-          clickChange: clickChange.startsWith("-") ? clickChange : `+${clickChange}`,
-          userChange: userChange.startsWith("-") ? userChange : `+${userChange}`,
+          linkChange: Number(linkChange.startsWith("-") ? linkChange : `+${linkChange}`),
+          clickChange: Number(clickChange.startsWith("-") ? clickChange : `+${clickChange}`),
+          userChange: Number(userChange.startsWith("-") ? userChange : `+${userChange}`),
         });
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
@@ -126,19 +135,23 @@ export function Analytics() {
     fetchAnalytics();
   }, []);
 
-  // Delete URL function
-  async function deleteUrl(id: number) {
+  async function deleteUrl(id: string) {
     if (!confirm("Are you sure you want to delete this link?")) return;
 
     try {
-      const response = await fetch(`/api/url/manage/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete URL");
+      const response = await fetch(`/api/url/manage/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete URL");
+      }
 
       setUrls((prevUrls) => prevUrls.filter((url) => url.id !== id));
       toast.success("Link deleted successfully");
     } catch (error) {
-      console.error("Failed to delete link:", error);
-      toast.error("Failed to delete link");
+      console.error("Error deleting URL:", error);
+      toast.error("Failed to delete URL. Please try again.");
     }
   }
 
@@ -147,6 +160,14 @@ export function Analytics() {
     url.longUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
     url.shortCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
